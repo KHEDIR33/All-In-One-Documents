@@ -40,8 +40,6 @@ def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
-USER_FILES = {}
-
 # ---------------------------------------------------------
 # Telegram Bot Handlers
 # ---------------------------------------------------------
@@ -76,10 +74,9 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     input_path = f"downloads_{update.effective_user.id}_{file_name}"
     await file.download_to_drive(input_path)
     
-    USER_FILES[update.effective_user.id] = {
-        'file_path': input_path,
-        'file_name': file_name
-    }
+    # ፋይሉን በ Context user_data ውስጥ እናስቀምጠዋለን (ጊዜያዊ)
+    context.user_data['file_path'] = input_path
+    context.user_data['file_name'] = file_name
 
     if file_ext == '.pdf':
         keyboard = [
@@ -124,10 +121,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     input_path = f"downloads_{update.effective_user.id}_photo.jpg"
     await file.download_to_drive(input_path)
     
-    USER_FILES[update.effective_user.id] = {
-        'file_path': input_path,
-        'file_name': "photo.jpg"
-    }
+    context.user_data['file_path'] = input_path
+    context.user_data['file_name'] = "photo.jpg"
     
     keyboard = [
         [
@@ -153,7 +148,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
-    user_id = update.effective_user.id
     action = query.data
 
     if action.startswith("info_"):
@@ -170,13 +164,17 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(msg, parse_mode="Markdown")
         return
 
-    if user_id not in USER_FILES:
-        await query.edit_message_text("❌ *Session expired.* Please re-send your file.", parse_mode="Markdown")
+    # ተጠቃሚው ዘግይቶ ሲመለስ ፋይሉ ከጠፋ / Session ከቀየረ እንደ አዲስ ማስጀመር
+    if 'file_path' not in context.user_data or 'file_name' not in context.user_data:
+        await query.edit_message_text(
+            "⏳ ፋይሉ አልተገኘም ወይም ሰዎዎ (Session) አልቋል።\n\n"
+            "እባክዎን `/start` ብለው በመጻፍ ወይም ፋይሉን እንደ አዲስ በመላክ ይጀምሩ!",
+            parse_mode="Markdown"
+        )
         return
 
-    user_data = USER_FILES[user_id]
-    input_path = user_data['file_path']
-    file_name = user_data['file_name']
+    input_path = context.user_data['file_path']
+    file_name = context.user_data['file_name']
 
     if action == "convert_word":
         await query.edit_message_text("⏳ *Converting PDF to Word (.docx)...*", parse_mode="Markdown")
@@ -285,7 +283,9 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if os.path.exists(input_path):
         os.remove(input_path)
-    del USER_FILES[user_id]
+    
+    # ስራው ሲያልቅ የ user_data ማህደር ይጸዳል (እንደ አዲስ መጀመር አለበት)
+    context.user_data.clear()
 
 def main():
     token = os.environ.get("BOT_TOKEN")
