@@ -1,27 +1,30 @@
 import os
-import logging
+import threading
+from flask import Flask
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+app = Flask(__name__)
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
+@app.route('/')
+def home():
+    return "Ethio PDF Converter Bot is running!"
+
+def run_flask():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    welcome_text = (
-        "እንኳን ወደ All-in-one Ethio PDF Converter በሰላም መጡ! 🇪🇹\n\n"
-        "ለመቀየር የሚፈልጉትን PDF ወይም ምስል (Image) ፋይል ይላኩልኝ።"
-    )
-    await update.message.reply_text(welcome_text)
+    await update.message.reply_text("እንኳን ወደ Ethio PDF Converter በደህና መጡ!")
 
-async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("ፋይሉ ደርሶኛል! በመቀየር ላይ ነው... እባክዎን ትንሽ ይጠብቁ።")
+def main():
+    token = os.environ.get("BOT_TOKEN")
+    application = ApplicationBuilder().token(token).build()
+    application.add_handler(CommandHandler("start", start))
+    application.run_polling()
 
 if __name__ == '__main__':
-    if not BOT_TOKEN:
-        print("Error: BOT_TOKEN Environment Variable missing!")
-    else:
-        app = ApplicationBuilder().token(BOT_TOKEN).build()
-        app.add_handler(CommandHandler("start", start))
-        app.add_handler(MessageHandler(filters.Document.ALL | filters.PHOTO, handle_document))
-        app.run_polling()
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.daemon = True
+    flask_thread.start()
+    main()
