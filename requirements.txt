@@ -2,3 +2,4 @@ python-telegram-bot
 pdf2image
 pytesseract
 Pillow
+flask
