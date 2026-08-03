@@ -46,20 +46,24 @@ USER_FILES = {}
 # Telegram Bot Handlers
 # ---------------------------------------------------------
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [
+        [InlineKeyboardButton("📄➡️📝 PDF to Word (.docx)", callback_data="info_pdf_word")],
+        [InlineKeyboardButton("📄➡️📊 PDF to Excel (.xlsx)", callback_data="info_pdf_excel")],
+        [InlineKeyboardButton("📝➡️📄 Word to PDF (.pdf)", callback_data="info_word_pdf")],
+        [InlineKeyboardButton("🖼️➡️📄 Image to PDF (.pdf)", callback_data="info_img_pdf")],
+        [InlineKeyboardButton("📄➡️🖼️ PDF to Images (PNG)", callback_data="info_pdf_img")],
+        [InlineKeyboardButton("🗜️ Compress PDF (Reduce Size)", callback_data="info_compress")],
+        [InlineKeyboardButton("🔓 Remove PDF Password", callback_data="info_unlock")]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     welcome_msg = (
-        "✨ *Welcome to All Doc Converter Bot!* ⚡\n\n"
-        "Your ultimate assistant for fast and easy document processing.\n\n"
-        "📌 *Supported Services:*\n"
-        "├ 📄 ➔ 📝 *PDF to Word* (.docx)\n"
-        "├ 📄 ➔ 📊 *PDF to Excel* (.xlsx)\n"
-        "├ 📝 ➔ 📄 *Word to PDF* (.pdf)\n"
-        "├ 🖼 ➔ 📄 *Image to PDF* (.pdf)\n"
-        "├ 📄 ➔ 🖼 *PDF to Images* (PNG)\n"
-        "├ 🗜 *Compress PDF* (Reduce size)\n"
-        "└ 🔓 *Remove Password* (Unlock PDF)\n\n"
-        "📥 *How to use:* Send any **PDF**, **Word (.docx)**, or **Image** file to begin!"
+        "🤖 *Welcome to All Doc Converter Bot!* ⚡\n"
+        "━━━━━━━━━━━━━━━━━━━━━━\n\n"
+        "አገልግሎት ለማግኘት የሚፈልጉትን **ፋይል (PDF, Word, Image)** ቀጥታ ወደዚህ ቻት ይላኩ!\n\n"
+        "ወይም ስለ አገልግሎቶቹ ዝርዝር ለማየት ከታች ያሉትን **አዝራሮች (Buttons)** ይጫኑ፦"
     )
-    await update.message.reply_text(welcome_msg, parse_mode="Markdown")
+    await update.message.reply_text(welcome_msg, reply_markup=reply_markup, parse_mode="Markdown")
 
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     doc = update.message.document
@@ -77,7 +81,6 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'file_name': file_name
     }
 
-    # PDF File received
     if file_ext == '.pdf':
         keyboard = [
             [
@@ -98,8 +101,6 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=reply_markup,
             parse_mode="Markdown"
         )
-
-    # Word File received (.docx)
     elif file_ext in ['.docx', '.doc']:
         keyboard = [
             [
@@ -140,13 +141,35 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
+async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    msg_text = (
+        "ለጽሁፍ መልእክትዎ ምላሽ መስጠት አልችልም። 😊\n\n"
+        "እባክዎን መቀየር የሚፈልጉትን **ፋይል (PDF, Word ወይም Image)** ቀጥታ ይላኩልኝ!\n"
+        "አገልግሎቶችን ለማየት `/start` ብለው ይጻፉ።"
+    )
+    await update.message.reply_text(msg_text, parse_mode="Markdown")
+
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
     user_id = update.effective_user.id
     action = query.data
-    
+
+    if action.startswith("info_"):
+        info_messages = {
+            "info_pdf_word": "📄➡️📝 **PDF to Word**\n\nይህንን አገልግሎት ለመጠቀም መቀየር የሚፈልጉትን **PDF ፋይል** ቀጥታ ወደዚህ ቻት ይላኩ!",
+            "info_pdf_excel": "📄➡️📊 **PDF to Excel**\n\nበ PDF ውስጥ ያሉ ሰንጠረዦችን ወደ Excel ለመቀየር **PDF ፋይሉን** ይላኩ!",
+            "info_word_pdf": "📝➡️📄 **Word to PDF**\n\nየ Word ሰነድዎን ወደ PDF ለመቀየር **.docx ፋይልዎን** ይላኩ!",
+            "info_img_pdf": "🖼️➡️📄 **Image to PDF**\n\nምስልን ወደ PDF ለመቀየር የሚፈልጉትን **ፎቶ/ምስል** ይላኩ!",
+            "info_pdf_img": "📄➡️🖼️ **PDF to Images**\n\nየ PDF ገጾችን ወደ ምስል (PNG) ለመቀየር **PDF ፋይልዎን** ይላኩ!",
+            "info_compress": "🗜️ **Compress PDF**\n\nየ PDF ፋይል መጠንን ለመቀነስ **PDF ፋይልዎን** ይላኩ!",
+            "info_unlock": "🔓 **Remove Password**\n\nየተቆለፈ PDF ፓስወርድ ለማንሳት **PDF ፋይሉን** ይላኩ!"
+        }
+        msg = info_messages.get(action, "እባክዎን ለመጀመር ፋይልዎን ይላኩ።")
+        await query.message.reply_text(msg, parse_mode="Markdown")
+        return
+
     if user_id not in USER_FILES:
         await query.edit_message_text("❌ *Session expired.* Please re-send your file.", parse_mode="Markdown")
         return
@@ -155,7 +178,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     input_path = user_data['file_path']
     file_name = user_data['file_name']
 
-    # --- PDF TO WORD ---
     if action == "convert_word":
         await query.edit_message_text("⏳ *Converting PDF to Word (.docx)...*", parse_mode="Markdown")
         output_docx = f"{os.path.splitext(input_path)[0]}.docx"
@@ -163,20 +185,14 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             cv = Converter(input_path)
             cv.convert(output_docx, start=0, end=None)
             cv.close()
-            
             with open(output_docx, 'rb') as docx_file:
-                await context.bot.send_document(
-                    chat_id=query.message.chat_id,
-                    document=docx_file,
-                    filename=f"{os.path.splitext(file_name)[0]}.docx"
-                )
+                await context.bot.send_document(chat_id=query.message.chat_id, document=docx_file, filename=f"{os.path.splitext(file_name)[0]}.docx")
             await query.edit_message_text("✅ *Conversion complete!* Sent your Word file above.", parse_mode="Markdown")
             if os.path.exists(output_docx): os.remove(output_docx)
         except Exception as e:
             logging.error(f"Error PDF to Word: {e}")
             await query.edit_message_text("❌ Failed to convert PDF to Word.")
 
-    # --- PDF TO EXCEL ---
     elif action == "convert_excel":
         await query.edit_message_text("⏳ *Extracting tables & converting to Excel (.xlsx)...*", parse_mode="Markdown")
         output_xlsx = f"{os.path.splitext(input_path)[0]}.xlsx"
@@ -188,18 +204,12 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     for table in tables:
                         df = pd.DataFrame(table[1:], columns=table[0])
                         all_tables.append(df)
-            
             if all_tables:
                 with pd.ExcelWriter(output_xlsx, engine='openpyxl') as writer:
                     for idx, df in enumerate(all_tables):
                         df.to_excel(writer, sheet_name=f"Table_{idx+1}", index=False)
-                
                 with open(output_xlsx, 'rb') as xlsx_file:
-                    await context.bot.send_document(
-                        chat_id=query.message.chat_id,
-                        document=xlsx_file,
-                        filename=f"{os.path.splitext(file_name)[0]}.xlsx"
-                    )
+                    await context.bot.send_document(chat_id=query.message.chat_id, document=xlsx_file, filename=f"{os.path.splitext(file_name)[0]}.xlsx")
                 await query.edit_message_text("✅ *PDF successfully converted to Excel!*", parse_mode="Markdown")
                 if os.path.exists(output_xlsx): os.remove(output_xlsx)
             else:
@@ -208,7 +218,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logging.error(f"Error PDF to Excel: {e}")
             await query.edit_message_text("❌ Failed to convert PDF to Excel.")
 
-    # --- COMPRESS PDF ---
     elif action == "compress_pdf":
         await query.edit_message_text("⏳ *Compressing PDF file size...*", parse_mode="Markdown")
         output_compressed = f"{os.path.splitext(input_path)[0]}_compressed.pdf"
@@ -216,47 +225,34 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             doc = fitz.open(input_path)
             doc.save(output_compressed, garbage=4, deflate=True, clean=True)
             doc.close()
-
             with open(output_compressed, 'rb') as pdf_file:
-                await context.bot.send_document(
-                    chat_id=query.message.chat_id,
-                    document=pdf_file,
-                    filename=f"{os.path.splitext(file_name)[0]}_compressed.pdf"
-                )
+                await context.bot.send_document(chat_id=query.message.chat_id, document=pdf_file, filename=f"{os.path.splitext(file_name)[0]}_compressed.pdf")
             await query.edit_message_text("✅ *PDF successfully compressed!*", parse_mode="Markdown")
             if os.path.exists(output_compressed): os.remove(output_compressed)
         except Exception as e:
             logging.error(f"Error Compress PDF: {e}")
             await query.edit_message_text("❌ Failed to compress PDF.")
 
-    # --- REMOVE PASSWORD ---
     elif action == "remove_pass":
         await query.edit_message_text("⏳ *Removing password protection...*", parse_mode="Markdown")
         output_unlocked = f"{os.path.splitext(input_path)[0]}_unlocked.pdf"
         try:
             reader = PdfReader(input_path)
             if reader.is_encrypted:
-                # Attempt to decrypt with empty password if restrictions are simple
                 reader.decrypt("")
             writer = PdfWriter()
             for page in reader.pages:
                 writer.add_page(page)
             with open(output_unlocked, "wb") as f:
                 writer.write(f)
-
             with open(output_unlocked, 'rb') as pdf_file:
-                await context.bot.send_document(
-                    chat_id=query.message.chat_id,
-                    document=pdf_file,
-                    filename=f"{os.path.splitext(file_name)[0]}_unlocked.pdf"
-                )
+                await context.bot.send_document(chat_id=query.message.chat_id, document=pdf_file, filename=f"{os.path.splitext(file_name)[0]}_unlocked.pdf")
             await query.edit_message_text("✅ *PDF Password restrictions removed!*", parse_mode="Markdown")
             if os.path.exists(output_unlocked): os.remove(output_unlocked)
         except Exception as e:
             logging.error(f"Error Remove Pass: {e}")
-            await query.edit_message_text("❌ Failed to unlock PDF. If it requires a custom password, decrypting without it is restricted.")
+            await query.edit_message_text("❌ Failed to unlock PDF.")
 
-    # --- PDF TO IMAGES ---
     elif action == "convert_image":
         await query.edit_message_text("⏳ *Exporting PDF pages as Images...*", parse_mode="Markdown")
         try:
@@ -265,18 +261,13 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 img_path = f"page_{i+1}.png"
                 img.save(img_path, 'PNG')
                 with open(img_path, 'rb') as img_file:
-                    await context.bot.send_photo(
-                        chat_id=query.message.chat_id,
-                        photo=img_file,
-                        caption=f"Page {i+1}"
-                    )
+                    await context.bot.send_photo(chat_id=query.message.chat_id, photo=img_file, caption=f"Page {i+1}")
                 if os.path.exists(img_path): os.remove(img_path)
             await query.edit_message_text("✅ *PDF pages sent as Images!*", parse_mode="Markdown")
         except Exception as e:
             logging.error(f"Error PDF to Image: {e}")
             await query.edit_message_text("❌ Failed to convert PDF to Images.")
 
-    # --- IMAGE TO PDF ---
     elif action == "img_to_pdf":
         await query.edit_message_text("⏳ *Converting Image to PDF...*", parse_mode="Markdown")
         output_pdf = f"{os.path.splitext(input_path)[0]}.pdf"
@@ -284,13 +275,8 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             image = Image.open(input_path)
             image_converted = image.convert('RGB')
             image_converted.save(output_pdf)
-            
             with open(output_pdf, 'rb') as pdf_file:
-                await context.bot.send_document(
-                    chat_id=query.message.chat_id,
-                    document=pdf_file,
-                    filename="converted_photo.pdf"
-                )
+                await context.bot.send_document(chat_id=query.message.chat_id, document=pdf_file, filename="converted_photo.pdf")
             await query.edit_message_text("✅ *Image successfully converted to PDF!*", parse_mode="Markdown")
             if os.path.exists(output_pdf): os.remove(output_pdf)
         except Exception as e:
@@ -301,9 +287,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         os.remove(input_path)
     del USER_FILES[user_id]
 
-# ---------------------------------------------------------
-# Main Bot Execution
-# ---------------------------------------------------------
 def main():
     token = os.environ.get("BOT_TOKEN")
     if not token:
@@ -319,6 +302,7 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.Document.ALL, handle_document))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_text))
     application.add_handler(CallbackQueryHandler(button_callback))
 
     print("Bot is starting polling...")
