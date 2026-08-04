@@ -352,3 +352,82 @@ if __name__ == '__main__':
 
     # Start FastAPI server on main thread (required by Render)
     run_fastapi()
+
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+app = FastAPI(title="All-In-One Documents Backend")
+
+# 1. CORS Middleware: Framer ዌብሳይታችን ከዚህ ሰርቨር ጋር እንዲነጋገር (API Call) መፍቀድ
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # ለጊዜው ሁሉንም ፈቅደናል (በ후ኋላ የFramer ዌብሳይት ሊንክዎን ብቻ ማድረግ ይቻላል)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# 2. የቴሌብር ክፍያ ማረጋገጫ ማስመሰያ (Telebirr Verification Logic)
+def verify_telebirr_payment(phone_number: str, password: str) -> bool:
+    # እዚህጋ ከቴሌብር API ጋር የሚደረግ ትስስር ወይም የፓስወርድ ማረጋገጫ ይፃፋል
+    # ለምሳሌ ፓስወርዱ ትክክለኛ ከሆነ True ይመልሳል
+    if password == "1234":  # ለሙከራ ያስቀመጥነው ፓስወርድ
+        return True
+    return False
+
+
+# 3. ፋይል የመቀየር እና ክፍያ ማስተናገጃ Endpoint
+@app.post("/api/convert")
+async def convert_document(
+    file: UploadFile = File(...),
+    phone_number: str = Form(...),
+    password: str = Form(...),
+):
+    # ሀ. የቴሌብር ክፍያ ማረጋገጥ
+    payment_success = verify_telebirr_payment(phone_number, password)
+    if not payment_success:
+        raise HTTPException(
+            status_code=400,
+            detail="የቴሌብር ፓስወርድ ስህተት ነው! እባክዎ እንደገና ይሞክሩ።",
+        )
+
+    # ለ. ክፍያው ከተሳካ ፋይሉን የማቀናበር ስራ (Conversion logic) እዚህ ይከናወናል
+    contents = await file.read()
+
+    # (እዚህ ጋር የ PDF ወደ Word ወይም የሚፈልጉትን መቀየሪያ ኮድ ያስገቡ)
+
+    return JSONResponse(
+        content={
+            "status": "success",
+            "message": "ክፍያው ተሳክቷል! ፋይሉ ተቀይሯል።",
+            "download_url": "/api/download-result/processed_file.docx",
+        }
+    )
+
+
+# 4. ሰነድ የመፈለግ እና የማውረድ Endpoint (Search & Download)
+@app.post("/api/search-download")
+async def search_and_download(
+    query: str = Form(...), phone_number: str = Form(...), password: str = Form(...)
+):
+    # ሀ. የቴሌብር ክፍያ ማረጋገጥ
+    payment_success = verify_telebirr_payment(phone_number, password)
+    if not payment_success:
+        raise HTTPException(
+            status_code=400,
+            detail="የቴሌብር ፓስወርድ ስህተት ነው! ክፍያው አልተሳካም።",
+        )
+
+    # ለ. ፍለጋውን አድርጎ ፋይሉን የማዘጋጀት ስራ
+    # (በቀድሞው ኮድዎ የነበሩትን የ Internet Archive / Library API ፍለጋዎች እዚህ ይጠቀሙ)
+
+    return JSONResponse(
+        content={
+            "status": "success",
+            "message": "ፋይሉ ተዘጋጅቷል፣ ማውረድ ይችላሉ።",
+            "file_name": f"{query}.pdf",
+        }
+    )
+
