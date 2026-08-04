@@ -1,15 +1,19 @@
-# All Doc Converter Bot ⚡
+# All-In-One Documents ⚡
 
-A powerful, all-in-one Telegram Bot to convert and manage documents effortlessly.
+A powerful, all-in-one Telegram Bot and Web Service to convert and manage documents effortlessly.
 
 ## 🌟 Features
-- 📄➡️📝 **PDF to Word** (`.docx`)
-- 📄➡️📊 **PDF to Excel** (`.xlsx`)
-- 📝➡️📄 **Word to PDF** (`.pdf`)
-- 🖼➡️📄 **Image to PDF** (`.pdf`)
-- 📄➡️🖼 **PDF to Images** (`PNG`)
-- 🗜 **Compress PDF** (Reduce file size)
-- 🔓 **Remove PDF Password** (Unlock protection)
+
+* 📄➡️📝 **PDF to Word (.docx)**
+* 📄➡️📊 **PDF to Excel (.xlsx)**
+* 📝➡️📄 **Word to PDF (.pdf)**
+* 🖼️➡️📄 **Image to PDF (.pdf)**
+* 📄➡️🖼️ **PDF to Images (PNG)**
+* ✍️ **Edit & Sign PDF**
+* 🗜️ **Compress PDF (Reduce file size)**
+* 🔓 **Remove PDF Password (Unlock protection)**
+* 🔍 **Search & Download Docs**
 
 ## 🚀 Deployed on
-- Render (Python Web Service)
+
+* Render (FastAPI Web Service & Telegram Bot Worker)
