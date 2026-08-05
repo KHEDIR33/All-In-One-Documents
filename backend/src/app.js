@@ -6,6 +6,7 @@ const rateLimit = require("express-rate-limit");
 
 const connectDatabase = require("./config/database");
 
+const fileRoutes = require("./routes/fileRoutes");
 
 const app = express();
 
@@ -44,7 +45,10 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-
+app.use(
+    "/api/files",
+    fileRoutes
+);
 
 app.get("/", (req,res)=>{
 
