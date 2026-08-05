@@ -1,20 +1,30 @@
-function errorHandler(err,req,res,next){
-
+function errorHandler(err, req, res, next) {
 
     console.error(err);
 
 
-    res.status(500).json({
+    // Multer upload errors
+    if (err.name === "MulterError") {
 
-        success:false,
+        return res.status(400).json({
 
-        message:"Server error",
+            success: false,
 
-        error:
-        err.message
+            message: err.message
+
+        });
+
+    }
+
+
+    // Custom errors
+    res.status(err.status || 500).json({
+
+        success: false,
+
+        message: err.message || "Server error"
 
     });
-
 
 }
 
