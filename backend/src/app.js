@@ -9,7 +9,9 @@ const connectDatabase = require("./config/database");
 const fileRoutes = require("./routes/fileRoutes");
 
 const app = express();
+const paymentRoutes = require("./routes/paymentRoutes");
 
+const paymentRoutes = require("./routes/paymentRoutes");
 
 connectDatabase();
 
@@ -25,6 +27,10 @@ app.use(helmet());
 
 app.use(express.json());
 
+app.use(
+    "/api/payment",
+    paymentRoutes
+);
 app.use(morgan("combined"));
 
 
