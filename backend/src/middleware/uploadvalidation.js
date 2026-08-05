@@ -13,41 +13,48 @@ const allowedTypes = [
 ];
 
 
-function validateFile(req,res,next){
+function validateFile(req, res, next) {
 
-
-    if(!req.file){
+    if (!req.file) {
 
         return res.status(400).json({
 
-            success:false,
+            success: false,
 
-            message:"File is required"
+            message: "File is required"
 
         });
 
     }
 
+    const maxSize = 50 * 1024 * 1024;
 
-    if(!allowedTypes.includes(req.file.mimetype)){
-
+    if (req.file.size > maxSize) {
 
         return res.status(400).json({
 
-            success:false,
+            success: false,
 
-            message:"File type not supported"
+            message: "File size exceeds 50MB limit"
 
         });
 
-
     }
 
+    if (!allowedTypes.includes(req.file.mimetype)) {
+
+        return res.status(400).json({
+
+            success: false,
+
+            message: "File type not supported"
+
+        });
+
+    }
 
     next();
 
 }
-
-
 
 module.exports = validateFile;
