@@ -7,11 +7,14 @@ const rateLimit = require("express-rate-limit");
 const connectDatabase = require("./config/database");
 
 const fileRoutes = require("./routes/fileRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const uploadRoutes = require("./routes/uploadRoutes");
+
+const errorHandler = require("./middleware/errorHandler");
+
 
 const app = express();
-const paymentRoutes = require("./routes/paymentRoutes");
 
-const uploadRoutes = require("./routes/uploadRoutes");
 
 connectDatabase();
 
@@ -25,10 +28,11 @@ app.use(
 
 app.use(helmet());
 
+
 app.use(express.json());
 
-app.use(morgan("combined"));
 
+app.use(morgan("combined"));
 
 
 const limiter = rateLimit({
@@ -37,9 +41,12 @@ const limiter = rateLimit({
 
     max: 100,
 
-    message:{
-        success:false,
-        message:"Too many requests"
+    message: {
+
+        success: false,
+
+        message: "Too many requests"
+
     }
 
 });
@@ -47,19 +54,26 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
+
+
 app.use(
     "/api/files",
     fileRoutes
 );
+
 
 app.use(
     "/api/upload",
     uploadRoutes
 );
 
+
 app.use(
     "/api/payment",
-    paymentRoutes);
+    paymentRoutes
+);
+
+
 
 app.get("/", (req,res)=>{
 
@@ -76,6 +90,10 @@ app.get("/", (req,res)=>{
     });
 
 });
+
+
+// Error handler must be last
+app.use(errorHandler);
 
 
 
