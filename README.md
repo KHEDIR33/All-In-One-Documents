@@ -7,8 +7,6 @@ A powerful, all-in-one Telegram Bot and Web Service to convert and manage docume
 * 📄➡️📝 **PDF to Word (.docx)**
 * 📄➡️📊 **PDF to Excel (.xlsx)**
 * 📝➡️📄 **Word to PDF (.pdf)**
-* 🖼️➡️📄 **Image to PDF (.pdf)**
-* 📄➡️🖼️ **PDF to Images (PNG)**
 * ✍️ **Edit & Sign PDF**
 * 🗜️ **Compress PDF (Reduce file size)**
 * 🔓 **Remove PDF Password (Unlock protection)**
